@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stress Prediction with Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
+            margin: 20px auto;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        #chatbot {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            margin: 20px auto;
+            height: 300px;
+            overflow-y: auto;
+        }
+        img {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        adjustable-image {
+            width: 100%;
+            max-width: 100%;
+            object-fit: cover;
+            border-radius: 100px;
+            margin-bottom: 200px;
+        }
+
+        .chatbot-message {
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: #4e48c9;
+            color: white;
+        }
+
+        .bot-message {
+            align-self: flex-start;
+            background-color: #ddd;
+        }
+
+        #chat-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Full-width image at the top -->
+    <img src="vinu.jpg" alt="Stress Gauge">
+
+    <!-- Background Music -->
+    <audio id="bg-music" loop>
+        <source src="peace.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <!-- Main container -->
+    <div class="container">
+        <h1>Charaka Therapy</h1>
+        <div id="chatbot">
+            <div class="chatbot-message bot-message" id="bot-greeting">Hi! I’m Charaka here to help you.</div>
+<script>
+    // Voice output for the initial greeting message
+    const greetingMessage = document.getElementById('bot-greeting').textContent;
+    const utterance = new SpeechSynthesisUtterance(greetingMessage);
+    speechSynthesis.speak(utterance);
+</script>
+
+        </div>
+        <input type="text" id="chat-input" placeholder="Type your response...">
+    </div>
+
+    <script>
+        // Play background music on page load attempt
+        window.onload = function() {
+            const audio = document.getElementById("bg-music");
+
+            // Play music when the user clicks the chat input field
+            const chatInput = document.getElementById("chat-input");
+            chatInput.addEventListener('focus', () => {
+                audio.play();
+            });
+        };
+
+        const chatbot = document.getElementById('chatbot');
+        const chatInput = document.getElementById('chat-input');
+
+        const inputs = {};
+        
+        // Initial questions including new stress-related questions
+        const questions = [
+            { key: 'name', question: ' Could you please enter your name:', validator: val => isNaN(val), errorMessage: 'Invalid input. Names cannot contain numbers.' },
+            { key: 'age', question: 'Could you please enter your age:', validator: val => !isNaN(val) && val > 0, errorMessage: 'Invalid input. Age must be a positive number.' },
+            
+
+             // Existing health-related questions
+             { key: 'heartRate', question: 'Could you please enter your heart rate (bpm):', validator: val => !isNaN(val) && val>0},
+             { key: 'temperature', question: 'Could you please enter your body temperature (°F)?', validator: val => !isNaN(val) && val>0},
+             { key: 'systolic', question: 'Could you please enter your systolic blood pressure:', validator: val => !isNaN(val) && val>0},
+             { key: 'diastolic', question: 'Could you please enter your diastolic blood pressure:', validator: val => !isNaN(val) && val>0},
+         ];
+        
+         let currentQuestionIndex = 0;
+
+         function addMessage(message, isUser) {
+             const msgDiv = document.createElement('div');
+             msgDiv.className = `chatbot-message ${isUser ? 'user-message' : 'bot-message'}`;
+             msgDiv.textContent = message;
+             chatbot.appendChild(msgDiv);
+             chatbot.scrollTop = chatbot.scrollHeight; // Scroll to bottom
+         }
+
+         function speakMessage(message) {
+             const utterance = new SpeechSynthesisUtterance(message);
+             speechSynthesis.speak(utterance);
+         }
+
+         function handleResponse(response) {
+             const question = questions[currentQuestionIndex];
+             
+             if (question.validator(response)) {
+                 inputs[question.key] = isNaN(response) ? response : parseFloat(response);
+                 currentQuestionIndex++;
+                 
+                 if (currentQuestionIndex < questions.length) {
+                     const nextQuestion = questions[currentQuestionIndex].question;
+                     addMessage(nextQuestion, false);
+                     speakMessage(nextQuestion); // Voice output for the next question
+                 } else {
+                     predictStress();
+                 }
+                 
+             } else {
+                 const errorMessage = question.errorMessage || `Invalid input. ${question.question}`;
+                 addMessage(errorMessage, false);
+                 speakMessage(errorMessage); // Voice feedback for invalid input
+             }
+         }
+
+         function predictStress() {
+             const { heartRate, temperature, systolic, diastolic } = inputs;
+
+             const isStress = heartRate > 90 || temperature > 100 || systolic > 120 || diastolic > 80;
+
+           
+             
+              const result = isStress ? "Stress Detected" : "No Stress";
+              addMessage(`Result based on physical parameter and stress responses is ${result}`, false);
+              speakMessage(`Result based on physical parameter and stress responses is ${result}`); // Voice feedback for the result
+         }
+
+         chatInput.addEventListener('keypress', function (e) {
+             if (e.key === 'Enter' && chatInput.value.trim()) {
+                 const userMessage = chatInput.value.trim();
+                 addMessage(userMessage, true);
+                 handleResponse(userMessage);
+                 chatInput.value = '';
+             }
+         });
+         const initialMessage = questions[currentQuestionIndex].question;
+
+         addMessage(initialMessage, false);
+         speakMessage(initialMessage); // Voice output for the first question
+
+     </script>
+</body>
+</html> 
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Questionaries</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+        }
+        .question {
+            margin-bottom: 10px;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 15px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        
+        img {
+            width: 100%;
+            max-height: 500px;
+            object-fit: cover;
+            display: block;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Questionaries</h1>
+<p>Hi! I’m Charaka here to help you.</p>
+
+<form id="stressForm">
+    <div class="question">
+        <label for="stress1">1. In the last month, how often have you been upset because of something that happened unexpectedly? (0 - never, 1 - almost never, 2 - sometimes, 3 - fairly often, 4 - very often)</label><br>
+        <input type="number" id="stress1" min="0" max="4" required>
+    </div>
+    <div class="question">
+        <label for="stress2">2. In the last month, how often have you felt that you were unable to control the important things in your life?</label><br>
+        <input type="number" id="stress2" min="0" max="4" required>
+    </div>
+    <div class="question">
+        <label for="stress3">3. In the last month, how often have you felt nervous and stressed?</label><br>
+        <input type="number" id="stress3" min="0" max="4" required>
+    </div>
+    <div class="question">
+        <label for="stress4">4. In the last month, how often have you felt confident about your ability to handle your personal problems?</label><br>
+        <input type="number" id="stress4" min="0" max="4" required>
+    </div>
+    <div class="question">
+        <label for="stress5">5. In the last month, how often have you felt that things were going your way?</label><br>
+        <input type="number" id="stress5" min="0" max="4" required>
+    </div>
+    <div class="question">
+        <label for="stress6">6. In the last month, how often have you found that you could not cope with all the things that you had to do?</label><br>
+        <input type="number" id="stress6" min="0" max="4" required>
+    </div>
+    <div class="question">
+        <label for="stress7">7. In the last month, how often have you been able to control irritations in your life?</label><br>
+        <input type="number" id="stress7" min="0" max="4" required>
+    </div>
+    <div class="question">
+        <label for="stress8">8. In the last month, how often have you felt that you were on top of things?</label><br>
+        <input type="number" id="stress8" min="0" max="4" required>
+    </div>
+    <div class="question">
+        <label for="stress9">9. In the last month, how often have you been angered because of things that happened that were outside of your control?</label><br>
+        <input type="number" id="stress9" min="0" max="4" required>
+    </div>
+    <div class="question">
+        <label for="stress10">10. In the last month, how often have you felt difficulties were piling up so high that you could not overcome them?</label><br>
+        <input type="number" id="stress10" min="0" max="4" required>
+    </div>
+
+    <button type="button" onclick="calculateStress()">Submit</button>
+
+    <div class="result" id="result"></div>
+</form>
+
+<script>
+function calculateStress() {
+    const responses = [];
+    
+    for (let i = 1; i <= 10; i++) {
+        const value = parseInt(document.getElementById(`stress${i}`).value);
+        responses.push(value);
+    }
+
+    const totalScore = responses.reduce((sum, val) => sum + val, 0);
+    
+    let stressLevel = '';
+    
+    if (totalScore >= 0 && totalScore <= 13) {
+        stressLevel = "Low Stress";
+    } else if (totalScore >= 14 && totalScore <= 26) {
+        stressLevel = "Moderate Stress";
+    } else if (totalScore >= 27 && totalScore <= 40) {
+        stressLevel = "High Perceived Stress";
+    } else {
+        stressLevel = "Invalid Score";
+    }
+    
+    document.getElementById('result').innerText = `Total Score: ${totalScore} | Stress Level: ${stressLevel}`;
+    
+}
+</script>
+
+</body>
+</html>
